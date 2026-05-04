@@ -41,6 +41,7 @@ export default function StreakPage({ searchParams }: StreakPageProps) {
   const hardwareStr = searchParams.hardware || '0,0,0,0,0,0,0'
   const manualStr = searchParams.manual || '0,0,0,0,0,0,0'
   const startDate = searchParams.startDate || new Date().toISOString().split('T')[0]
+  const name = 'Your child'
 
   // Parse arrays
   const hardware = hardwareStr.split(',').map(d => d === '1')
