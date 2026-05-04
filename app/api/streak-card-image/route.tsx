@@ -9,6 +9,11 @@ import { NextRequest } from 'next/server'
 
 export const runtime = 'edge'
 
+// Base64-encoded image assets
+const HATCH_ICON = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAN5JREFUeAGFUcsRgjAQ3Q1w8KIpISVgBdKBWoFSgSXYglYgVOBQAS1gB9ABemIGzRrChI8GfTOZ2f++lwWwwOUiaJ4tx2xBBLkDoqPxORe8z+mI4B5RqooyyViCRFedlLgHR/pEGDzvxbJvaGmcVMPBupEwqh95OKJE8MpgAsgg6WwtruUbwA8omhExFusNiFjAH6hiMdLgcLExYr+mI4Z1mUcw1MBArmFqOki/rzNBQl9NOjfTuhjiVvmx+qUVDG6hMTyOuxCpNxcX2zbHGFVVVt3aGS+Uupusyvyz4Q1Sh0i5G6vl3gAAAABJRU5ErkJggg=='
+const DAY_COMPLETED = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAWJJREFUeAG9lr1OwzAUhW3ETgZmiARrRUckkBqJkQdgrdgYEQsjhaFssRjYGDow8RAuT0CExJwW2NM+we29liOlf7FjJznSUdroxl/uieOYM4MAIMJDD03HUJs0QyfaI855wlxEALQEe0l9U9aAAB2Du+jawAQJ0V/gLxojLOukDkgRFmwC+cS1TTHb8OCbUlQESWhOMod0wUOj9w846pyZyqIdZPWZo6a//+zpWbDe+ampNPKK7frmTnWTTv9MpZJAGThogoPv7h2q6CyUMlNF8v0D2Wy+dv4YO7m4vAJbGUH7Bx0VUVGPw1h1YxHZEigtK6BoaNCX1zf1nyIj+GBY6f3OrCbD7f1AwSjGfAJUlJoMDzaV9DyokxxYUcJ6+aHIaAJQdw7qtrcEtbqoapiA+iXWFiNo68OnYc1/ylc684lRgGlzsgKsdbvFLYD0DvTRJ2j6nd/tRPsTPcYN5LhsnAXjQN9IwDfTkAAAAABJRU5ErkJggg=='
+const DAY_UPCOMING = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAQpJREFUeAHtVssNgzAMfaAiIfWSETJCR2AERmAERuooHaEjZIRcKlVCFbWjBAFtFD5JDxVPQiRg+8XY2AYCOAlZFUI2bk/rlq/Z/oK9YCNCSBGS4XtIbgIW5lOWQkqsBOsYb5cQsvCqk63VNy93EHwjHNvL3eIBNCXxIRKegC7I5vQpMW+JSQgpbAaRudTstLojAdh+T9+MY1SlImF0gMoAif/DuG6l5MhxYCtMr4lY4zwcbU4/kyoS5rktCDf8HMmKqg3LkN4voI7dj4xNrfSEiGrSNXY/OpNNr4DY2Zt8+h+Vgf1kl7cOJ7ZT68VKbsAIzWx2agrOdd5ap20QLdl8YBz25EHdL4jtG+k6OsxTOMdoAAAAAElFTkSuQmCC'
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -61,21 +66,13 @@ export async function GET(req: NextRequest) {
                   gap: '8px',
                 }}
               >
-                {/* Hatch icon (simplified star/asterisk) */}
-                <div
-                  style={{
-                    width: '12px',
-                    height: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#040F1F',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                  }}
-                >
-                  ✱
-                </div>
+                {/* Hatch icon */}
+                <img
+                  src={HATCH_ICON}
+                  width="12"
+                  height="12"
+                  style={{ flexShrink: 0 }}
+                />
                 <span
                   style={{
                     fontSize: '14px',
@@ -155,23 +152,13 @@ export async function GET(req: NextRequest) {
                       gap: '4px',
                     }}
                   >
-                    {/* Circle with checkmark if done */}
-                    <div
-                      style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        background: done ? '#6BA4D9' : 'transparent',
-                        border: done ? '2px solid #040F1F' : '1.5px solid rgba(4,15,31,0.25)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: '#040F1F',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {done ? '✓' : ''}
-                    </div>
+                    {/* Circle - completed or upcoming */}
+                    <img
+                      src={done ? DAY_COMPLETED : DAY_UPCOMING}
+                      width="26"
+                      height="26"
+                      style={{ flexShrink: 0 }}
+                    />
                     {/* Day label */}
                     <span
                       style={{
