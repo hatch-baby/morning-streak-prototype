@@ -87,7 +87,6 @@ function EditScreen() {
   return (
     <div style={{
       backgroundColor: '#030d1c',
-      minHeight: '100vh',
       minHeight: '100dvh', // Use dynamic viewport height for mobile
       display: 'flex',
       alignItems: 'center',
