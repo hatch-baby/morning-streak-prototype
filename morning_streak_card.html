@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #B8C5D6;
+    padding: 16px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    max-width: 400px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #040F1F;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    background: #040F1F;
+    border-radius: 50%;
+  }
+
+  .edit-btn {
+    color: #040F1F;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: rgba(4,15,31,0.05);
+    transition: background 0.2s ease;
+  }
+
+  .edit-btn:active {
+    background: rgba(4,15,31,0.1);
+  }
+
+  .streak-display {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .count {
+    font-size: 48px;
+    font-weight: 300;
+    color: #040F1F;
+    line-height: 1;
+  }
+
+  .count-label {
+    font-size: 24px;
+    color: rgba(4,15,31,0.4);
+  }
+
+  .days-container {
+    flex: 1;
+  }
+
+  .circles {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(4,15,31,0.2);
+    background: transparent;
+    transition: all 0.2s ease;
+  }
+
+  .circle.filled {
+    background: #040F1F;
+    border-color: #040F1F;
+  }
+
+  .labels {
+    display: flex;
+    gap: 8px;
+  }
+
+  .label {
+    width: 40px;
+    text-align: center;
+    font-size: 11px;
+    color: rgba(4,15,31,0.6);
+    font-weight: 500;
+  }
+
+  .description {
+    margin-top: 16px;
+    font-size: 13px;
+    color: rgba(4,15,31,0.6);
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="header">
+    <div class="title">
+      <div class="dot"></div>
+      Morning Routine
+    </div>
+    <a href="#" id="edit-link" class="edit-btn">Edit</a>
+  </div>
+
+  <div class="streak-display">
+    <div class="count">
+      <span id="completed-count">0</span><span class="count-label">/7</span>
+    </div>
+
+    <div class="days-container">
+      <div class="circles" id="circles-container">
+        <!-- Circles will be inserted here by JavaScript -->
+      </div>
+      <div class="labels">
+        <div class="label">Mon</div>
+        <div class="label">Tue</div>
+        <div class="label">Wed</div>
+        <div class="label">Thu</div>
+        <div class="label">Fri</div>
+        <div class="label">Sat</div>
+        <div class="label">Sun</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="description">
+    Tap to view this week's streak
+  </div>
+</div>
+
+<script>
+// This is how the Hatch app or Braze will populate the data
+
+function renderStreakCard(data) {
+  // data format:
+  // {
+  //   hardware: "1,0,1,0,0,0,0",
+  //   manual: "0,1,0,0,0,0,0",
+  //   start_date: "2026-04-28",
+  //   family_id: "member_12345"
+  // }
+
+  // Parse arrays
+  const hardware = data.hardware.split(',').map(d => d === '1')
+  const manual = data.manual.split(',').map(d => d === '1')
+
+  // Merge: day is complete if EITHER hardware OR manual
+  const days = hardware.map((hw, i) => hw || manual[i])
+
+  // Count completed days
+  const completedCount = days.filter(d => d).length
+
+  // Update count display
+  document.getElementById('completed-count').textContent = completedCount
+
+  // Render circles
+  const circlesContainer = document.getElementById('circles-container')
+  circlesContainer.innerHTML = ''
+
+  days.forEach(isCompleted => {
+    const circle = document.createElement('div')
+    circle.className = 'circle' + (isCompleted ? ' filled' : '')
+    circlesContainer.appendChild(circle)
+  })
+
+  // Build edit URL
+  const baseUrl = 'https://your-app.vercel.app' // Replace with actual domain
+  const editUrl = `${baseUrl}/edit?family=${data.family_id}&hardware=${data.hardware}&manual=${data.manual}&startDate=${data.start_date}`
+
+  document.getElementById('edit-link').href = editUrl
+}
+
+// EXAMPLE USAGE:
+// When Braze sends content card, it includes extras data like:
+// {
+//   type: "morning_streak",
+//   hardware: "1,0,1,0,0,0,0",
+//   manual: "0,1,0,0,0,0,0",
+//   start_date: "2026-04-28",
+//   family_id: "member_12345"
+// }
+//
+// The Hatch app calls:
+// renderStreakCard(contentCard.extras)
+
+// Demo with sample data (remove in production)
+if (window.location.search.includes('demo')) {
+  renderStreakCard({
+    hardware: "1,0,1,0,0,0,0",
+    manual: "0,1,0,0,0,0,0",
+    start_date: "2026-04-28",
+    family_id: "demo"
+  })
+}
+</script>
+
+</body>
+</html>
