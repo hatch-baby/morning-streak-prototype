@@ -1,10 +1,10 @@
 'use client'
 
-// Edit streaks page — hardware days are read-only, manual days can be toggled
+// Edit streaks page — parents can toggle any day (hardware or manual)
 // URL params:
 //   family    — member ID
-//   hardware  — hardware button taps (read-only), e.g. "1,0,1,0,0,0,0"
-//   manual    — manually added days (editable), e.g. "0,1,0,0,0,0,0"
+//   hardware  — hardware button taps from Redshift, e.g. "1,0,1,0,0,0,0"
+//   manual    — parent's edits (source of truth after first edit), e.g. "0,1,0,0,0,0,0"
 //   startDate — week start date
 
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -20,34 +20,37 @@ function EditScreen() {
   const startDate = searchParams.get('startDate') || new Date().toISOString().split('T')[0]
 
   const hardware = hardwareStr.split(',').map(d => d === '1')
-  const initialManual = manualStr.split(',').map(d => d === '1')
+
+  // Initialize manual: if empty, copy hardware; otherwise use saved manual state
+  const isManualEmpty = manualStr === '0,0,0,0,0,0,0'
+  const initialManual = isManualEmpty
+    ? hardware.slice() // First edit: copy hardware state
+    : manualStr.split(',').map(d => d === '1') // Use saved manual state
+
   const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-  // Local state — only manual days can be toggled
+  // Local state — manual is the source of truth, all days can be toggled
   const [manual, setManual] = useState<boolean[]>(initialManual)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // All days can be toggled
   function toggle(i: number) {
-    // Hardware days are read-only
-    if (hardware[i]) {
-      return // Can't toggle hardware days
-    }
-
-    // Toggle manual day
     const next = [...manual]
     next[i] = !next[i]
     setManual(next)
   }
 
+  // Badge shows ORIGIN (not current state)
+  // If hardware[i] = true, it's always "Button-tap" regardless of current toggle state
   function getLabel(i: number): 'auto' | 'manual' | 'none' {
-    if (hardware[i]) return 'auto'
-    if (manual[i]) return 'manual'
-    return 'none'
+    if (!manual[i]) return 'none' // Not currently checked
+    if (hardware[i]) return 'auto' // Origin: hardware button tap
+    return 'manual' // Origin: manually added by parent
   }
 
   function isDayComplete(i: number): boolean {
-    return hardware[i] || manual[i]
+    return manual[i] // Manual is now the source of truth
   }
 
   async function handleSave() {
@@ -85,20 +88,26 @@ function EditScreen() {
     <div style={{
       backgroundColor: '#030d1c',
       minHeight: '100vh',
+      minHeight: '100dvh', // Use dynamic viewport height for mobile
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
-      <div style={{ width: '100%', maxWidth: '375px', position: 'relative' }}>
+      <div style={{
+        width: '100%',
+        maxWidth: '375px',
+        position: 'relative',
+        margin: '0 auto',
+      }}>
 
         {/* Header */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           marginBottom: '32px', position: 'relative',
         }}>
-          <div style={{ fontSize: '18px', fontWeight: '500', color: 'white' }}>
+          <div style={{ fontSize: '17px', fontWeight: '600', color: 'white', letterSpacing: '-0.4px' }}>
             Edit Streaks
           </div>
           <button
@@ -106,7 +115,7 @@ function EditScreen() {
             style={{
               position: 'absolute', right: 0,
               background: 'none', border: 'none',
-              color: '#7aa3cc', fontSize: '22px',
+              color: 'white', fontSize: '28px',
               cursor: 'pointer', lineHeight: 1,
               padding: '4px',
             }}
@@ -115,12 +124,35 @@ function EditScreen() {
           </button>
         </div>
 
+        {/* Info banner - moved above day list */}
+        <div style={{
+          backgroundColor: '#13294b',
+          borderRadius: '8px',
+          padding: '12px 14px',
+          display: 'flex', gap: '10px', alignItems: 'flex-start',
+          marginBottom: '24px',
+        }}>
+          <div style={{ width: '24px', height: '24px', flexShrink: 0, marginTop: '1px' }}>
+            <svg width="18" height="18" viewBox="0 0 18.167 18.1582" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M9.0791 18.1582C7.83691 18.1582 6.66797 17.9209 5.57227 17.4463C4.47656 16.9775 3.50977 16.3242 2.67188 15.4863C1.83984 14.6484 1.18652 13.6816 0.711914 12.5859C0.237305 11.4902 0 10.3213 0 9.0791C0 7.83691 0.237305 6.66797 0.711914 5.57227C1.18652 4.47656 1.83984 3.5127 2.67188 2.68066C3.50977 1.84277 4.47363 1.18652 5.56348 0.711914C6.65918 0.237305 7.82812 0 9.07031 0C10.3184 0 11.4902 0.237305 12.5859 0.711914C13.6816 1.18652 14.6484 1.84277 15.4863 2.68066C16.3242 3.5127 16.9805 4.47656 17.4551 5.57227C17.9297 6.66797 18.167 7.83691 18.167 9.0791C18.167 10.3213 17.9297 11.4902 17.4551 12.5859C16.9805 13.6816 16.3242 14.6484 15.4863 15.4863C14.6484 16.3242 13.6816 16.9775 12.5859 17.4463C11.4902 17.9209 10.3213 18.1582 9.0791 18.1582ZM9.0791 16.3652C10.0928 16.3652 11.0391 16.1777 11.918 15.8027C12.8027 15.4277 13.5762 14.9062 14.2383 14.2383C14.9062 13.5703 15.4277 12.7969 15.8027 11.918C16.1777 11.0391 16.3652 10.0928 16.3652 9.0791C16.3652 8.07129 16.1777 7.12793 15.8027 6.24902C15.4277 5.36426 14.9033 4.58789 14.2295 3.91992C13.5615 3.25195 12.7881 2.73047 11.9092 2.35547C11.0303 1.98047 10.084 1.79297 9.07031 1.79297C8.0625 1.79297 7.11621 1.98047 6.23145 2.35547C5.35254 2.73047 4.58203 3.25195 3.91992 3.91992C3.25781 4.58789 2.73926 5.36426 2.36426 6.24902C1.98926 7.12793 1.80176 8.07129 1.80176 9.0791C1.80176 10.0928 1.98926 11.0391 2.36426 11.918C2.73926 12.7969 3.25781 13.5703 3.91992 14.2383C4.58789 14.9062 5.36133 15.4277 6.24023 15.8027C7.125 16.1777 8.07129 16.3652 9.0791 16.3652ZM7.53223 13.8516C7.33301 13.8516 7.16602 13.7871 7.03125 13.6582C6.89648 13.5293 6.8291 13.3682 6.8291 13.1748C6.8291 12.9814 6.89648 12.8203 7.03125 12.6914C7.16602 12.5625 7.33301 12.498 7.53223 12.498H8.57812V8.81543H7.69043C7.49121 8.81543 7.32422 8.75098 7.18945 8.62207C7.05469 8.49316 6.9873 8.3291 6.9873 8.12988C6.9873 7.94238 7.05469 7.78418 7.18945 7.65527C7.32422 7.52637 7.49121 7.46191 7.69043 7.46191H9.36035C9.60645 7.46191 9.79395 7.54102 9.92285 7.69922C10.0518 7.85742 10.1162 8.06836 10.1162 8.33203V12.498H11.1006C11.2939 12.498 11.458 12.5625 11.5928 12.6914C11.7275 12.8203 11.7949 12.9814 11.7949 13.1748C11.7949 13.3682 11.7275 13.5293 11.5928 13.6582C11.458 13.7871 11.2939 13.8516 11.1006 13.8516H7.53223ZM9.02637 6.09082C8.69824 6.09082 8.41699 5.97363 8.18262 5.73926C7.94824 5.49902 7.83105 5.21484 7.83105 4.88672C7.83105 4.55273 7.94824 4.26855 8.18262 4.03418C8.41699 3.7998 8.69824 3.68262 9.02637 3.68262C9.36621 3.68262 9.65039 3.7998 9.87891 4.03418C10.1074 4.26855 10.2217 4.55273 10.2217 4.88672C10.2217 5.21484 10.1074 5.49902 9.87891 5.73926C9.65039 5.97363 9.36621 6.09082 9.02637 6.09082Z" fill="#7aa3cc"/>
+            </svg>
+          </div>
+          <div style={{
+            fontSize: '13px',
+            color: 'white',
+            lineHeight: '1.4',
+            fontWeight: '400',
+            letterSpacing: '-0.08px',
+          }}>
+            Days with &lsquo;Button-tap&rsquo; were automatically recorded when your child tapped the Big Button.
+          </div>
+        </div>
+
         {/* Day rows */}
         <div style={{ marginBottom: '24px' }}>
           {dayLabels.map((label, i) => {
             const labelType = getLabel(i)
             const isComplete = isDayComplete(i)
-            const isHardware = hardware[i]
 
             return (
               <div
@@ -129,29 +161,45 @@ function EditScreen() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  paddingTop: '20px',
                   paddingBottom: '20px',
-                  marginBottom: i < 6 ? '4px' : 0,
                   borderBottom: i < 6 ? '1px solid #1e3d6b' : 'none',
-                  opacity: isHardware ? 0.7 : 1, // Hardware days slightly dimmed
                 }}
               >
                 {/* Day label */}
-                <div style={{ fontSize: '22px', fontWeight: '500', color: 'white', width: '68px' }}>
+                <div style={{
+                  fontSize: '22px',
+                  fontWeight: '600',
+                  color: 'white',
+                  minWidth: '68px',
+                  flexShrink: 0,
+                  letterSpacing: '-0.4px',
+                }}>
                   {label}
                 </div>
 
                 {/* Source pill */}
-                <div style={{ flex: 1, paddingLeft: '16px' }}>
+                <div style={{
+                  flex: 1,
+                  paddingLeft: '16px',
+                  paddingRight: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}>
                   {labelType !== 'none' && (
                     <div style={{
                       display: 'inline-block',
-                      border: '1px solid rgba(217,217,217,0.5)',
+                      border: '1px solid #d9d9d9',
                       borderRadius: '30px',
-                      padding: '3px 12px',
+                      padding: '4px 12px',
                       fontSize: '13px',
-                      color: 'rgba(255,255,255,0.7)',
+                      fontWeight: '400',
+                      color: 'white',
+                      opacity: 0.7,
+                      whiteSpace: 'nowrap',
+                      letterSpacing: '-0.08px',
                     }}>
-                      {labelType === 'auto' ? 'Button Tap' : 'Added by you'}
+                      {labelType === 'auto' ? 'Button-tap' : 'Added by you'}
                     </div>
                   )}
                 </div>
@@ -159,21 +207,26 @@ function EditScreen() {
                 {/* Toggle circle */}
                 <button
                   onClick={() => toggle(i)}
-                  disabled={isHardware}
                   style={{
-                    width: '40px', height: '40px',
+                    width: '40px',
+                    height: '40px',
+                    minWidth: '40px',
+                    minHeight: '40px',
                     borderRadius: '50%',
-                    backgroundColor: isComplete ? '#378ADD' : 'transparent',
-                    border: isComplete ? 'none' : '2px solid #2a4d7a',
-                    cursor: isHardware ? 'not-allowed' : 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: isComplete ? 'white' : 'transparent',
+                    border: isComplete ? 'none' : '2px solid rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     flexShrink: 0,
-                    transition: 'background-color 0.15s',
+                    transition: 'all 0.15s',
+                    opacity: labelType === 'auto' ? 0.5 : 1,
                   }}
                 >
                   {isComplete && (
                     <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-                      <path d="M1 6L5.5 10.5L15 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M1 6L5.5 10.5L15 1" stroke="#030d1c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </button>
@@ -199,36 +252,21 @@ function EditScreen() {
           onClick={handleSave}
           disabled={saving}
           style={{
-            width: '100%', padding: '14px',
-            borderRadius: '10px',
-            backgroundColor: saving ? '#1e3d6b' : '#185FA5',
+            width: '100%',
+            padding: '16px',
+            borderRadius: '30px',
+            backgroundColor: saving ? '#b8a798' : '#e8ddd1',
             border: 'none',
-            color: saving ? '#7aa3cc' : 'white',
-            fontSize: '15px', fontWeight: '500',
+            color: '#030d1c',
+            fontSize: '17px',
+            fontWeight: '600',
             cursor: saving ? 'not-allowed' : 'pointer',
-            marginBottom: '24px',
             transition: 'background-color 0.15s',
+            letterSpacing: '-0.4px',
           }}
         >
           {saving ? 'Saving…' : 'Save'}
         </button>
-
-        {/* Info banner */}
-        <div style={{
-          backgroundColor: '#13294b',
-          borderRadius: '8px',
-          padding: '12px 14px',
-          display: 'flex', gap: '10px', alignItems: 'flex-start',
-        }}>
-          <div style={{ color: '#7aa3cc', fontSize: '16px', flexShrink: 0, marginTop: '1px' }}>ℹ</div>
-          <div style={{
-            fontSize: '13px', color: 'white',
-            lineHeight: '1.5', fontWeight: '500',
-            letterSpacing: '0.02em',
-          }}>
-            Days with &lsquo;Button Tap&rsquo; were automatically recorded and cannot be removed. You can add any missed days manually.
-          </div>
-        </div>
       </div>
     </div>
   )
