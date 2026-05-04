@@ -1,5 +1,5 @@
 // GET /api/streak-card-image
-// Generates a dynamic content card image for Braze
+// Generates a dynamic content card image for Braze matching Figma design exactly
 // Query params:
 //   hardware - comma-separated 0/1 values (default: "0,0,0,0,0,0,0")
 //   manual - comma-separated 0/1 values (default: "0,0,0,0,0,0,0")
@@ -21,8 +21,8 @@ export async function GET(req: NextRequest) {
     // Merge: day is complete if EITHER hardware OR manual
     const days = hardware.map((hw, i) => hw || manual[i])
 
-    // Hardcoded day labels
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    // Day labels (single letter)
+    const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
     const completedCount = days.filter(Boolean).length
 
@@ -33,15 +33,14 @@ export async function GET(req: NextRequest) {
             width: '100%',
             height: '100%',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             background: 'linear-gradient(180deg, #97A7BF 5%, #96B7E5 107%)',
-            padding: '16px',
+            padding: '12px 16px',
+            borderRadius: '16px',
           }}
         >
           <div
             style={{
-              width: '346px',
+              width: '100%',
               display: 'flex',
               flexDirection: 'column',
               gap: '12px',
@@ -62,18 +61,25 @@ export async function GET(req: NextRequest) {
                   gap: '8px',
                 }}
               >
+                {/* Hatch icon (simplified star/asterisk) */}
                 <div
                   style={{
                     width: '12px',
                     height: '12px',
-                    background: '#040F1F',
-                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#040F1F',
+                    fontSize: '14px',
+                    fontWeight: '600',
                   }}
-                />
+                >
+                  ✱
+                </div>
                 <span
                   style={{
                     fontSize: '14px',
-                    fontWeight: 600,
+                    fontWeight: '600',
                     color: '#040F1F',
                     letterSpacing: '1px',
                     textTransform: 'uppercase',
@@ -85,7 +91,9 @@ export async function GET(req: NextRequest) {
               <span
                 style={{
                   fontSize: '14px',
+                  fontWeight: '400',
                   color: '#040F1F',
+                  letterSpacing: '0.28px',
                 }}
               >
                 Edit
@@ -105,13 +113,15 @@ export async function GET(req: NextRequest) {
                 style={{
                   display: 'flex',
                   alignItems: 'baseline',
+                  gap: '2px',
                 }}
               >
                 <span
                   style={{
                     fontSize: '40px',
-                    fontWeight: 400,
+                    fontWeight: '400',
                     color: '#040F1F',
+                    lineHeight: '40px',
                   }}
                 >
                   {completedCount}
@@ -119,12 +129,12 @@ export async function GET(req: NextRequest) {
                 <span
                   style={{
                     fontSize: '18px',
-                    fontWeight: 500,
-                    color: '#040F1F',
-                    opacity: 0.7,
+                    fontWeight: '500',
+                    color: 'rgba(4, 15, 31, 0.7)',
+                    lineHeight: '24px',
                   }}
                 >
-                  /7
+                  / 7
                 </span>
               </div>
 
@@ -132,7 +142,7 @@ export async function GET(req: NextRequest) {
               <div
                 style={{
                   display: 'flex',
-                  gap: '8px',
+                  gap: '10px',
                 }}
               >
                 {days.map((done, i) => (
@@ -145,20 +155,30 @@ export async function GET(req: NextRequest) {
                       gap: '4px',
                     }}
                   >
+                    {/* Circle with checkmark if done */}
                     <div
                       style={{
                         width: '26px',
                         height: '26px',
                         borderRadius: '50%',
-                        background: done ? '#6BA4D9' : '#A8BDD9',
-                        border: done ? '2px solid #040F1F' : '1px solid rgba(4,15,31,0.2)',
+                        background: done ? '#6BA4D9' : 'transparent',
+                        border: done ? '2px solid #040F1F' : '1.5px solid rgba(4,15,31,0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#040F1F',
+                        fontSize: '12px',
                       }}
-                    />
+                    >
+                      {done ? '✓' : ''}
+                    </div>
+                    {/* Day label */}
                     <span
                       style={{
-                        fontSize: '10px',
-                        color: '#040F1F',
-                        opacity: 0.7,
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        color: 'rgba(4, 15, 31, 0.7)',
+                        letterSpacing: '0px',
                       }}
                     >
                       {labels[i]}
@@ -171,8 +191,8 @@ export async function GET(req: NextRequest) {
         </div>
       ),
       {
-        width: 378,
-        height: 155,
+        width: 346,
+        height: 95,
       }
     )
   } catch (error) {
