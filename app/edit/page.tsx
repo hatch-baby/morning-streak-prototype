@@ -69,11 +69,9 @@ function EditScreen() {
 
       if (!res.ok) throw new Error('Failed to save')
 
-      // Navigate back to streak view with updated manual state
-      const newManualStr = manual.map(m => m ? 1 : 0).join(',')
-      router.push(
-        `/streak?family=${encodeURIComponent(family)}&hardware=${encodeURIComponent(hardwareStr)}&manual=${encodeURIComponent(newManualStr)}&startDate=${encodeURIComponent(startDate)}`
-      )
+      // Success! Close the webview by going back
+      // When opened from Hatch app Banner, this closes the webview
+      router.back()
     } catch {
       setError('Something went wrong. Please try again.')
       setSaving(false)
@@ -81,7 +79,13 @@ function EditScreen() {
   }
 
   function handleClose() {
-    router.back()
+    // Try to go back, or close window if no history
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      // In webview, try to close
+      window.close()
+    }
   }
 
   return (
