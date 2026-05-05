@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
   try {
     const { family, manual } = await req.json()
 
+    console.log('[update-streak] Received:', { family, manual })
+
     if (!family || !Array.isArray(manual) || manual.length !== 7) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
@@ -40,9 +42,11 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(brazePayload),
     })
 
+    const brazeResponseText = await brazeRes.text()
+    console.log('[update-streak] Braze response:', brazeRes.status, brazeResponseText)
+
     if (!brazeRes.ok) {
-      const text = await brazeRes.text()
-      console.error('Braze error:', text)
+      console.error('Braze error:', brazeResponseText)
       return NextResponse.json({ error: 'Braze update failed' }, { status: 502 })
     }
 
