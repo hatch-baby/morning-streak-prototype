@@ -32,6 +32,7 @@ function EditScreen() {
   // Local state — manual is the source of truth, all days can be toggled
   const [manual, setManual] = useState<boolean[]>(initialManual)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // All days can be toggled
@@ -76,9 +77,9 @@ function EditScreen() {
 
       if (!res.ok) throw new Error('Failed to save')
 
-      // Success! Close the webview by going back
-      // When opened from Hatch app Banner, this closes the webview
-      router.back()
+      // Success! Show saved state
+      setSaving(false)
+      setSaved(true)
     } catch (err) {
       const message = err instanceof Error && err.name === 'AbortError'
         ? 'Request timed out. Please check your connection.'
@@ -287,25 +288,42 @@ function EditScreen() {
           flexShrink: 0,
           backgroundColor: '#030d1c',
         }}>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
+          {saved ? (
+            <div style={{
               width: '100%',
               padding: '14px',
               borderRadius: '30px',
-              backgroundColor: saving ? '#b8a798' : '#e8ddd1',
+              backgroundColor: '#4CAF50',
               border: 'none',
-              color: '#030d1c',
+              color: 'white',
               fontSize: '17px',
               fontWeight: '600',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.15s',
+              textAlign: 'center',
               letterSpacing: '-0.4px',
-            }}
-          >
-            {saving ? 'Saving…' : 'Save'}
-          </button>
+            }}>
+              ✓ Saved! Close this page to see your updated streak.
+            </div>
+          ) : (
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: '30px',
+                backgroundColor: saving ? '#b8a798' : '#e8ddd1',
+                border: 'none',
+                color: '#030d1c',
+                fontSize: '17px',
+                fontWeight: '600',
+                cursor: saving ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.15s',
+                letterSpacing: '-0.4px',
+              }}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          )}
         </div>
       </div>
     </div>
