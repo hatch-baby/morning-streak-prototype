@@ -58,6 +58,10 @@ function EditScreen() {
     setError(null)
 
     try {
+      // Add 10 second timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
+
       const res = await fetch('/api/update-streak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,15 +69,21 @@ function EditScreen() {
           family,
           manual: manual.map(m => m ? 1 : 0), // Only send manual array
         }),
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!res.ok) throw new Error('Failed to save')
 
       // Success! Close the webview by going back
       // When opened from Hatch app Banner, this closes the webview
       router.back()
-    } catch {
-      setError('Something went wrong. Please try again.')
+    } catch (err) {
+      const message = err instanceof Error && err.name === 'AbortError'
+        ? 'Request timed out. Please check your connection.'
+        : 'Something went wrong. Please try again.'
+      setError(message)
       setSaving(false)
     }
   }
