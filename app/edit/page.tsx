@@ -120,30 +120,11 @@ function EditScreen() {
         overflow: 'hidden',
       }}>
 
-        {/* Header - Fixed at top */}
+        {/* Header - Just spacing */}
         <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           padding: '16px 20px 12px',
-          position: 'relative',
           flexShrink: 0,
         }}>
-          <div style={{ fontSize: '17px', fontWeight: '600', color: 'white', letterSpacing: '-0.4px' }}>
-            Edit Streaks
-          </div>
-          <button
-            onClick={handleClose}
-            style={{
-              position: 'absolute', right: '20px',
-              background: 'none', border: 'none',
-              color: 'white', fontSize: '28px',
-              cursor: 'pointer', lineHeight: 1,
-              padding: '4px',
-            }}
-          >
-            ×
-          </button>
         </div>
 
         {/* Scrollable content area */}
