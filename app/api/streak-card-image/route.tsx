@@ -39,8 +39,8 @@ export async function GET(req: NextRequest) {
             height: '100%',
             display: 'flex',
             background: 'linear-gradient(180deg, #97A7BF 5%, #96B7E5 107%)',
-            padding: '12px 16px',
-            borderRadius: '16px',
+            padding: '24px 32px',
+            borderRadius: '32px',
           }}
         >
           <div
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
               width: '100%',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px',
+              gap: '24px',
             }}
           >
             {/* Header row */}
@@ -63,22 +63,22 @@ export async function GET(req: NextRequest) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  gap: '16px',
                 }}
               >
                 {/* Hatch icon */}
                 <img
                   src={HATCH_ICON}
-                  width="12"
-                  height="12"
+                  width="24"
+                  height="24"
                   style={{ flexShrink: 0 }}
                 />
                 <span
                   style={{
-                    fontSize: '14px',
+                    fontSize: '28px',
                     fontWeight: '600',
                     color: '#040F1F',
-                    letterSpacing: '1px',
+                    letterSpacing: '2px',
                     textTransform: 'uppercase',
                   }}
                 >
@@ -87,10 +87,10 @@ export async function GET(req: NextRequest) {
               </div>
               <span
                 style={{
-                  fontSize: '14px',
+                  fontSize: '28px',
                   fontWeight: '400',
                   color: '#040F1F',
-                  letterSpacing: '0.28px',
+                  letterSpacing: '0.56px',
                 }}
               >
                 Edit
@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '16px',
+                gap: '32px',
               }}
             >
               {/* Count */}
@@ -110,25 +110,25 @@ export async function GET(req: NextRequest) {
                 style={{
                   display: 'flex',
                   alignItems: 'baseline',
-                  gap: '2px',
+                  gap: '4px',
                 }}
               >
                 <span
                   style={{
-                    fontSize: '40px',
+                    fontSize: '80px',
                     fontWeight: '400',
                     color: '#040F1F',
-                    lineHeight: '40px',
+                    lineHeight: '80px',
                   }}
                 >
                   {completedCount}
                 </span>
                 <span
                   style={{
-                    fontSize: '18px',
+                    fontSize: '36px',
                     fontWeight: '500',
                     color: 'rgba(4, 15, 31, 0.7)',
-                    lineHeight: '24px',
+                    lineHeight: '48px',
                   }}
                 >
                   / 7
@@ -139,7 +139,7 @@ export async function GET(req: NextRequest) {
               <div
                 style={{
                   display: 'flex',
-                  gap: '10px',
+                  gap: '20px',
                 }}
               >
                 {days.map((done, i) => (
@@ -149,20 +149,20 @@ export async function GET(req: NextRequest) {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '4px',
+                      gap: '8px',
                     }}
                   >
                     {/* Circle - completed or upcoming */}
                     <img
                       src={done ? DAY_COMPLETED : DAY_UPCOMING}
-                      width="26"
-                      height="26"
+                      width="52"
+                      height="52"
                       style={{ flexShrink: 0 }}
                     />
                     {/* Day label */}
                     <span
                       style={{
-                        fontSize: '11px',
+                        fontSize: '22px',
                         fontWeight: '500',
                         color: 'rgba(4, 15, 31, 0.7)',
                         letterSpacing: '0px',
@@ -178,8 +178,8 @@ export async function GET(req: NextRequest) {
         </div>
       ),
       {
-        width: 346,
-        height: 95,
+        width: 692,
+        height: 190,
       }
     )
   } catch (error) {
