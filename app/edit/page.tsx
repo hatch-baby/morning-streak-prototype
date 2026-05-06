@@ -319,12 +319,13 @@ function EditScreen() {
               backgroundColor: '#4CAF50',
               border: 'none',
               color: 'white',
-              fontSize: '17px',
+              fontSize: '15px',
               fontWeight: '600',
               textAlign: 'center',
               letterSpacing: '-0.4px',
+              lineHeight: '1.3',
             }}>
-              ✓ Saved! Close this page to see your updated streak.
+              ✓ Saved! Close the app completely and reopen to see your updated streak.
             </div>
           ) : (
             <button

@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
 
     const completedCount = days.filter(Boolean).length
 
-    return new ImageResponse(
+    const imageResponse = new ImageResponse(
       (
         <div
           style={{
@@ -182,6 +182,11 @@ export async function GET(req: NextRequest) {
         height: 190,
       }
     )
+
+    // Add aggressive caching headers to speed up Banner loading
+    imageResponse.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600')
+
+    return imageResponse
   } catch (error) {
     console.error('streak-card-image error:', error)
     return new Response('Failed to generate image', { status: 500 })
