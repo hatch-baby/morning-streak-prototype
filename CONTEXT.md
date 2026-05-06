@@ -2,7 +2,13 @@
 
 ## Overview
 
-A pilot feature (10 users) for tracking children's morning routine completion via hardware button taps AND parent manual edits. Data flows through Redshift → Braze → Hatch App, with a Vercel web app for editing.
+A pilot feature (10 users) for tracking children's morning routine completion via hardware button taps AND parent manual edits. Data flows through Redshift → Braze → Hatch App (via Banner), with a Vercel web app for editing.
+
+**Why Banners (not Content Cards):**
+- Hatch app does not support full-image content cards
+- Banners refresh automatically on session start (content always current)
+- Simpler setup with AI-powered drag-and-drop editor
+- No 30-day expiration limit
 
 ## Architecture
 
@@ -75,26 +81,33 @@ member_12345
 ### Step 2: Parent Opens Hatch App
 
 **What happens:**
-- Parent opens Hatch app
-- App requests content cards from Braze
+- Parent opens Hatch app (session start)
+- Banner refreshes automatically with latest user data
 
-**Braze sends:**
-- Image URL with user's data in query params (via Liquid template)
-- Link URL for Edit button
+**Braze evaluates Liquid templates:**
+- `{{${morning_streak_hardware}}}` → `"1,0,0,0,0,0,0"`
+- `{{${morning_streak_manual}}}` → `"0,0,0,0,0,0,0"`
+- Generates image URL with personalized data
 
 **Hatch app displays:**
-- Fetches image from Vercel: `/api/streak-card-image?family=member_12345&hardware=1,0,0,0,0,0,0&manual=0,0,0,0,0,0,0&startDate=2026-04-28`
+- Banner shows embedded image from Vercel: `/api/streak-card-image?hardware=1,0,0,0,0,0,0&manual=0,0,0,0,0,0,0`
 - Shows streak card with Monday filled (1/7)
+- **Key:** Banner refreshes automatically - no stale data
 
-### Step 3: Parent Taps "Edit"
+### Step 3: Parent Taps Banner
 
 **What happens:**
-- Parent taps Edit in content card
-- Opens browser to Vercel URL
+- Parent taps Banner
+- Deep link opens Hatch webview with Vercel edit page
 
-**Vercel receives:**
+**Deep link format:**
 ```
-GET /edit?family=member_12345&hardware=1,0,0,0,0,0,0&manual=0,0,0,0,0,0,0&startDate=2026-04-28
+hatchbabyRest://www.hatch.co/l/restBaby/webview?url={URL_ENCODED_EDIT_PAGE}
+```
+
+Where `{URL_ENCODED_EDIT_PAGE}` contains:
+```
+https://morning-streak-pilot.vercel.app/edit?family={{${external_id}}}&hardware={{${morning_streak_hardware}}}&manual={{${morning_streak_manual}}}&startDate={{${morning_streak_start_date}}}
 ```
 
 **Vercel displays:**
@@ -132,16 +145,18 @@ member_12345
 ### Step 5: Parent Returns to Hatch App
 
 **What happens:**
-- Parent closes browser
+- Parent closes webview
 - Returns to Hatch app
-- App refreshes content cards
+- **Banner refreshes automatically** (session start triggers refresh)
 
-**Braze sends updated image URL:**
-- `/api/streak-card-image?...&hardware=1,0,0,0,0,0,0&manual=0,1,0,0,0,0,0&...`
+**Braze re-evaluates Liquid with new data:**
+- `{{${morning_streak_manual}}}` → `"0,1,0,0,0,0,0"` (updated!)
+- New image URL generated with latest data
 
 **Hatch app displays:**
-- Streak card showing Monday + Tuesday (2/7)
+- Banner shows updated streak: Monday + Tuesday (2/7)
 - Merge logic: `hardware[i] OR manual[i]`
+- **Key:** No manual refresh needed - Banner updates automatically
 
 ### Step 6: Kid Taps Button Again (Wednesday)
 
@@ -209,16 +224,30 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 ### Braze Setup
 
 **Custom Attributes:**
-- `morning_streak_manual` (String) - Created by you
+- `morning_streak_manual` (String) - Created in Braze Data Settings
 
 **API Key:**
 - Name: Morning Streak Vercel
 - Permission: `users.track`
 
-**Content Card (in Canvas):**
-- Type: Captioned Image or Banner
-- Image URL: `https://{domain}/api/streak-card-image?family={{${user_id}}}&hardware={{${morning_streak_hardware}}}&manual={{${morning_streak_manual}}}&startDate={{${morning_streak_start_date}}}`
-- Click URL: `https://{domain}/edit?family={{${user_id}}}&hardware={{${morning_streak_hardware}}}&manual={{${morning_streak_manual}}}&startDate={{${morning_streak_start_date}}}`
+**Banner Campaign (Scheduled Delivery):**
+- **Campaign Type:** Scheduled Banner
+- **Delivery:** Continuous (start now, no end date)
+- **Refresh:** Automatic on session start
+- **Placement:** Morning routine feed placement
+
+**Banner Content:**
+- **HTML:** Embed image with personalized Liquid variables
+- **Image Source:** `https://morning-streak-pilot.vercel.app/api/streak-card-image?hardware={{${morning_streak_hardware}}}&manual={{${morning_streak_manual}}}`
+
+**Deep Link (On Click):**
+```
+hatchbabyRest://www.hatch.co/l/restBaby/webview?url={URL_ENCODED_EDIT_PAGE}
+```
+Where encoded URL is:
+```
+https://morning-streak-pilot.vercel.app/edit?family={{${external_id}}}&hardware={{${morning_streak_hardware}}}&manual={{${morning_streak_manual}}}&startDate={{${morning_streak_start_date}}}
+```
 
 ### Redshift Pipeline
 
@@ -252,9 +281,10 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 - Last save wins
 - Hardware array untouched
 
-### App Doesn't Refresh After Edit
-- Parent manually pulls down to refresh content cards
-- New image URL fetched with updated data
+### Banner Doesn't Update After Edit
+- **Automatic refresh:** Banner refreshes on next session start
+- **Manual refresh:** User can force refresh by closing/reopening app
+- **Key advantage over Content Cards:** No manual pull-to-refresh needed
 
 ## Testing Checklist
 
@@ -262,32 +292,37 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 - [ ] `morning_streak_manual` attribute exists in Braze
 - [ ] Braze API key created with `users.track` permission
 - [ ] Environment variables added to Vercel
-- [ ] Content card created in Canvas
-- [ ] Image URL renders correctly
-- [ ] Edit page opens from content card
+- [ ] Banner placement created in app (by Mobile team)
+- [ ] Banner campaign created with scheduled delivery
+- [ ] Image URL renders correctly in Banner HTML
+- [ ] Deep link format tested with Liquid personalization
+- [ ] Edit page opens from Banner tap
 - [ ] Save button updates Braze attribute
+- [ ] Banner refreshes automatically on session start
 - [ ] Test with 1 pilot user end-to-end
 
 ### End-to-End Test Flow
 1. Set test user's `morning_streak_hardware` to `"1,0,0,0,0,0,0"`
-2. Open Hatch app → verify card shows 1/7 with Monday filled
-3. Tap Edit → verify edit page opens with Monday showing "Button-tap"
+2. Open Hatch app → verify Banner shows 1/7 with Monday filled
+3. Tap Banner → verify edit page opens in webview with Monday showing "Button-tap"
 4. Toggle Tuesday ON → Save
-5. Return to app → verify card shows 2/7 (Mon + Tue)
-6. Toggle Tuesday OFF → Save
-7. Return to app → verify card shows 1/7 (Mon only)
+5. Close app completely → Reopen app (triggers session start)
+6. Verify Banner shows 2/7 (Mon + Tue) **automatically refreshed**
+7. Tap Banner → Toggle Tuesday OFF → Save
+8. Close app → Reopen app
+9. Verify Banner shows 1/7 (Mon only)
 
 ## Success Metrics
 
 **Track in Braze:**
-- Content card impressions (how many users see it)
-- Content card clicks (how many tap Edit)
-- Edit completions (track via Vercel API success)
+- Banner impressions (how many users see it)
+- Banner clicks (how many tap to edit)
+- Banner refresh rate (session starts)
 
 **Track in Vercel:**
 - `/edit` page views
 - `/api/update-streak` success rate
-- `/api/streak-card-image` requests
+- `/api/streak-card-image` requests (from Banner embeds)
 
 ## Rollout Plan
 
@@ -309,20 +344,28 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 ## Known Limitations (Pilot)
 
 1. **Week view only** - No historical data or multi-week tracking
-2. **Image-based card** - Native rendering would be faster (future)
-3. **Browser-based edit** - In-app editing would be better UX (future)
-4. **Manual refresh needed** - No push notification on update (future)
+2. **Image-based Banner** - Native rendering would be faster (future)
+3. **Webview-based edit** - In-app editing would be better UX (future)
+4. **Session-start refresh only** - Real-time updates would require push (future)
 5. **No rewards/gamification** - Future enhancement
+
+## Advantages of Banner Approach
+
+1. **Auto-refresh** - Banner refreshes on session start (no stale data)
+2. **No 30-day limit** - Can run continuously without expiration
+3. **AI-powered design** - Marketers can iterate without developer changes
+4. **Works with current app** - No need for full-image content card support
 
 ## Future Enhancements (Post-Pilot)
 
 ### If Pilot Succeeds
-1. Native content card rendering (Mobile team, 1-2 days)
-2. In-app edit modal (no browser open)
-3. Multi-week history view
-4. Push notification on button tap
+1. Native Banner rendering (faster load times)
+2. In-app edit modal (no webview needed)
+3. Multi-week history view in Banner
+4. Push notification on button tap with Banner update
 5. Rewards for streaks (5 days, 7 days, etc.)
 6. Parent insights ("Your child is most consistent on Mondays")
+7. Real-time Banner refresh (not just session start)
 
 ### Data Model Evolution
 - Store weekly history: `morning_streak_week_1`, `morning_streak_week_2`, etc.
@@ -333,15 +376,32 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 
 ### Common Issues
 
-**Image doesn't load:**
+**Banner doesn't appear:**
+- Verify Banner placement exists in Hatch app
+- Check Banner campaign is active (scheduled delivery)
+- Confirm user matches targeting criteria
+
+**Image doesn't load in Banner:**
 - Check Vercel deployment status
 - Verify environment variables set
-- Check browser console for 404 or 500 errors
+- Check Banner HTML for correct image URL
+- Test image URL in browser with real values
 
-**Edit button doesn't work:**
+**Deep link doesn't work:**
+- Verify deep link format: `hatchbabyRest://www.hatch.co/l/restBaby/webview?url={...}`
+- Check URL encoding is correct
+- Test if Liquid variables {{${...}}} are evaluated before encoding
+- Confirm edit page URL works in browser
+
+**Edit/Save doesn't work:**
 - Verify Braze API key has `users.track` permission
 - Check Vercel logs for API errors
 - Confirm `BRAZE_INSTANCE_URL` is correct
+
+**Banner doesn't refresh:**
+- User must close and reopen app (session start)
+- Check if user's attributes were updated in Braze
+- Verify Banner campaign "refresh on session start" is enabled
 
 **Hardware taps not showing:**
 - Confirm Redshift sync is running hourly
@@ -360,7 +420,8 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 
 **Braze:**
 - User Search → Find test user → View attributes
-- Campaign Analytics → Content card performance
+- Campaign Analytics → Banner performance (impressions, clicks)
+- Banner refresh logs (session start events)
 
 **Redshift:**
 - Airflow logs for CDI sync job
@@ -377,6 +438,121 @@ BRAZE_INSTANCE_URL=https://rest.iad-01.braze.com
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2026-05-04
-**Status:** Ready for Deployment
+## Implementation Progress (May 5, 2026)
+
+### ✅ What's Working
+
+**Vercel Application:**
+- Edit page loads and displays all 7 days with toggle controls
+- Save API successfully calls Braze `/users/track` endpoint (200 responses)
+- Image generation API creates 2x resolution (692×190) streak cards for Retina displays
+- Success message shows after save (since webview auto-close doesn't work)
+- All endpoints tested and functional in Safari
+
+**Braze Setup:**
+- All custom attributes created:
+  - `morning_streak_hardware`
+  - `morning_streak_manual`
+  - `morning_streak_start_date`
+- Banner campaign successfully displays in Hatch app
+- CDI sync active (Redshift → Braze hourly)
+- Test user profile populated with all required attributes
+
+**Technical Implementation:**
+- Debug logging added to track request flow
+- Timeout handling prevents hanging saves
+- Proper error messaging for network issues
+- Header and close button removed for cleaner webview experience
+
+### ❌ Current Issues
+
+**1. Liquid Personalization in Banner Deep Link**
+- **Problem:** Banner deep link passes empty values for all personalization variables
+- **Evidence:** Vercel logs show `family=&hardware=&manual=&startDate=`
+- **Root Cause:** Using incorrect Liquid syntax for custom attributes
+- **Current:** `{{${morning_streak_hardware}}}`
+- **Needed:** `{{custom_attribute.${morning_streak_hardware}}}`
+- **Impact:** Edit page can't load user data, save updates wrong/no user
+
+**2. Array Length Mismatch**
+- **Problem:** Braze attributes show 6 values instead of 7
+- **Example:** `morning_streak_hardware: "0,0,0,0,0,0"` (missing 7th day)
+- **Impact:** Edit page expects 7 days but receives 6
+- **Likely Cause:** Redshift pipeline configuration
+
+**3. Banner Re-entry Configuration**
+- **Problem:** Banner doesn't refresh after attribute updates
+- **Cause:** "Frequency Capping Rules ON" + "Users not eligible to re-enter"
+- **Workaround:** Stop and restart campaign, or switch to Canvas with re-entry enabled
+
+### 🔧 Fixes Needed
+
+**Immediate (Blocks End-to-End Testing):**
+1. Update Banner deep link to use `{{custom_attribute.${...}}}` syntax for custom attributes
+2. OR switch to Canvas approach with correct Liquid syntax
+3. Fix array length to 7 values in Redshift pipeline
+
+**Nice to Have:**
+1. Enable Banner re-entry or use Canvas for auto-refresh
+2. Test webview auto-close alternatives (currently shows success message)
+3. Add native Banner rendering in app (vs. image URL)
+
+### 📝 Testing Status
+
+**Tested & Working:**
+- ✅ Direct URL access in Safari (with hardcoded values)
+- ✅ Save API → Braze update (confirmed via curl tests)
+- ✅ Image generation at 2x resolution
+- ✅ Edit page UI and toggle functionality
+- ✅ Success/error message display
+
+**Blocked - Needs Banner Personalization Fix:**
+- ❌ Banner tap → Edit page with user data
+- ❌ Save → Update user's Braze profile
+- ❌ Close app → Reopen → See refreshed Banner
+
+**Not Yet Tested:**
+- Canvas approach with Banner delivery
+- Multi-user pilot (waiting for single-user success)
+- Week rollover behavior
+- Hardware+manual merge logic in production
+
+### 🎯 Next Steps
+
+**Option A: Fix Campaign (Quick)**
+1. Update Banner campaign's web URL with correct Liquid syntax
+2. Test Banner tap → Edit with populated data
+3. Verify save updates correct user
+4. Enable re-entry or create new campaign
+
+**Option B: Switch to Canvas (Recommended)**
+1. Create Canvas with Session Start trigger
+2. Banner step with correct Liquid syntax
+3. Enable immediate re-entry
+4. Test complete flow
+
+**Then:**
+5. Fix array length to 7 days (coordinate with Redshift team)
+6. Test with 1 user end-to-end
+7. Expand to 10 pilot users
+8. Monitor analytics and iterate
+
+### 📊 Metrics to Track
+
+**Technical:**
+- `/edit` page load success rate
+- `/api/update-streak` success rate (currently 100%)
+- Braze attribute update latency
+- Banner impression rate
+
+**User:**
+- Banner tap rate
+- Edit completion rate
+- Days manually added per week
+- Week-over-week streak completion
+
+---
+
+**Document Version:** 1.1
+**Last Updated:** 2026-05-05
+**Status:** In Progress - Blocked on Liquid Personalization
