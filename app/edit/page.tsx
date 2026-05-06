@@ -48,7 +48,7 @@ function EditScreen() {
 
         // Merge hardware and manual: day is checked if EITHER hardware OR manual
         // This ensures hardware taps are visible even if not in manual array
-        const merged = hardwareArr.map((hw, i) => hw || manualArr[i])
+        const merged = hardwareArr.map((hw: boolean, i: number) => hw || manualArr[i])
         setManual(merged)
 
         setLoading(false)
