@@ -1,0 +1,27 @@
+{% assign hardware_array = morning_streak_hardware | split: ',' %}
+{% assign manual_array = morning_streak_manual | split: ',' %}
+{% assign day_labels = 'M,T,W,T,F,S,S' | split: ',' %}
+{% assign completed_count = 0 %}
+{% for i in (0..6) %}{% if hardware_array[i] == '1' or manual_array[i] == '1' %}{% assign completed_count = completed_count | plus: 1 %}{% endif %}{% endfor %}
+
+<div style="background: linear-gradient(180deg, #97A7BF 5%, #96B7E5 107%); padding: 12px 16px; border-radius: 16px;">
+  <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+    <span style="font-size: 14px; font-weight: 600; color: #040F1F;">MORNING ROUTINE</span>
+    <span style="font-size: 14px; color: #040F1F;">Edit</span>
+  </div>
+  <div style="display: flex; align-items: center; gap: 16px;">
+    <span style="font-size: 40px; color: #040F1F;">{{ completed_count }}/7</span>
+    <div style="display: flex; gap: 10px;">
+      {% for i in (0..6) %}
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+        {% if hardware_array[i] == '1' or manual_array[i] == '1' %}
+        <div style="width: 26px; height: 26px; background: #4CAF50; border-radius: 50%;"></div>
+        {% else %}
+        <div style="width: 26px; height: 26px; background: rgba(255,255,255,0.5); border-radius: 50%;"></div>
+        {% endif %}
+        <span style="font-size: 11px; color: #040F1F;">{{ day_labels[i] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

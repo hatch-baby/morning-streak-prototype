@@ -1,39 +1,65 @@
 'use client'
 
-// Edit streaks page — parents can toggle any day (hardware or manual)
+// Edit streaks page — fetches user data from Braze server-side
 // URL params:
-//   family    — member ID
-//   hardware  — hardware button taps from Redshift, e.g. "1,0,1,0,0,0,0"
-//   manual    — parent's edits (source of truth after first edit), e.g. "0,1,0,0,0,0,0"
-//   startDate — week start date
+//   family — member ID (Braze external_id)
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 
 function EditScreen() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const family = searchParams.get('family') || 'demo'
-  const hardwareStr = searchParams.get('hardware') || '0,0,0,0,0,0,0'
-  const manualStr = searchParams.get('manual') || '0,0,0,0,0,0,0'
-  const startDate = searchParams.get('startDate') || new Date().toISOString().split('T')[0]
-
-  const hardware = hardwareStr.split(',').map(d => d === '1')
-
-  // Initialize manual: if empty, copy hardware; otherwise use saved manual state
-  const isManualEmpty = manualStr === '0,0,0,0,0,0,0'
-  const initialManual = isManualEmpty
-    ? hardware.slice() // First edit: copy hardware state
-    : manualStr.split(',').map(d => d === '1') // Use saved manual state
+  const family = searchParams.get('family') || searchParams.get('userId') || 'demo'
 
   const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-  // Local state — manual is the source of truth, all days can be toggled
-  const [manual, setManual] = useState<boolean[]>(initialManual)
+  // State for fetched data
+  const [hardware, setHardware] = useState<boolean[]>([false, false, false, false, false, false, false])
+  const [manual, setManual] = useState<boolean[]>([false, false, false, false, false, false, false])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Fetch user data from Braze on mount
+  useEffect(() => {
+    async function fetchUserData() {
+      if (!family || family === 'demo') {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/get-user-streak?family=${family}`)
+
+        if (!res.ok) {
+          throw new Error('Failed to load streak data')
+        }
+
+        const data = await res.json()
+
+        // Parse hardware and manual arrays
+        const hardwareArr = data.hardware.split(',').map((d: string) => d === '1')
+        const manualArr = data.manual.split(',').map((d: string) => d === '1')
+
+        setHardware(hardwareArr)
+
+        // Initialize manual: if empty, copy hardware; otherwise use saved manual state
+        const isManualEmpty = data.manual === '0,0,0,0,0,0,0'
+        setManual(isManualEmpty ? hardwareArr : manualArr)
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Failed to fetch user data:', err)
+        setError('Failed to load your streak data. Please try again.')
+        setLoading(false)
+      }
+    }
+
+    fetchUserData()
+  }, [family])
 
   // All days can be toggled
   function toggle(i: number) {
@@ -97,6 +123,21 @@ function EditScreen() {
       // In webview, try to close
       window.close()
     }
+  }
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div style={{
+        backgroundColor: '#030d1c',
+        minHeight: '100dvh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <div style={{ color: '#7aa3cc', fontSize: '14px' }}>Loading your streak...</div>
+      </div>
+    )
   }
 
   return (

@@ -1,0 +1,119 @@
+{% assign hardware_array = morning_streak_hardware | split: ',' %}
+{% assign manual_array = morning_streak_manual | split: ',' %}
+{% assign day_labels = 'M,T,W,T,F,S,S' | split: ',' %}
+
+{% assign completed_count = 0 %}
+{% for i in (0..6) %}
+  {% if hardware_array[i] == '1' or manual_array[i] == '1' %}
+    {% assign completed_count = completed_count | plus: 1 %}
+  {% endif %}
+{% endfor %}
+<div style="
+  width: 100%;
+  background: linear-gradient(180deg, #97A7BF 5%, #96B7E5 107%);
+  padding: 12px 16px;
+  border-radius: 16px;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+">
+
+  <!-- Header Row: Hatch Icon + "MORNING ROUTINE" + Edit -->
+  <div style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  ">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img
+        src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAN5JREFUeAGFUcsRgjAQ3Q1w8KIpISVgBdKBWoFSgSXYglYgVOBQAS1gB9ABemIGzRrChI8GfTOZ2f++lwWwwOUiaJ4tx2xBBLkDoqPxORe8z+mI4B5RqooyyViCRFedlLgHR/pEGDzvxbJvaGmcVMPBupEwqh95OKJE8MpgAsgg6WwtruUbwA8omhExFusNiFjAH6hiMdLgcLExYr+mI4Z1mUcw1MBArmFqOki/rzNBQl9NOjfTuhjiVvmx+qUVDG6hMTyOuxCpNxcX2zbHGFVVVt3aGS+Uupusyvyz4Q1Sh0i5G6vl3gAAAABJRU5ErkJggg=="
+        width="12"
+        height="12"
+        alt="Hatch"
+        style="flex-shrink: 0;"
+      />
+      <span style="
+        font-size: 14px;
+        font-weight: 600;
+        color: #040F1F;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      ">MORNING ROUTINE</span>
+    </div>
+
+    <span style="
+      font-size: 14px;
+      font-weight: 400;
+      color: #040F1F;
+      letter-spacing: 0.28px;
+    ">Edit</span>
+  </div>
+
+  <!-- Progress Row: Count + Day Circles -->
+  <div style="
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  ">
+
+    <!-- Count: "X / 7" -->
+    <div style="
+      display: flex;
+      align-items: baseline;
+      gap: 2px;
+    ">
+      <span style="
+        font-size: 40px;
+        font-weight: 400;
+        color: #040F1F;
+        line-height: 40px;
+      ">{{ completed_count }}</span>
+      <span style="
+        font-size: 18px;
+        font-weight: 500;
+        color: rgba(4, 15, 31, 0.7);
+        line-height: 24px;
+      ">/ 7</span>
+    </div>
+
+    <!-- Day Circles with Labels -->
+    <div style="display: flex; gap: 10px;">
+      {% for i in (0..6) %}
+        <div style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+        ">
+          <!-- Circle: Completed or Upcoming -->
+          {% if hardware_array[i] == '1' or manual_array[i] == '1' %}
+            <img
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAWJJREFUeAG9lr1OwzAUhW3ETgZmiARrRUckkBqJkQdgrdgYEQsjhaFssRjYGDow8RAuT0CExJwW2NM+we29liOlf7FjJznSUdroxl/uieOYM4MAIMJDD03HUJs0QyfaI855wlxEALQEe0l9U9aAAB2Du+jawAQJ0V/gLxojLOukDkgRFmwC+cS1TTHb8OCbUlQESWhOMod0wUOj9w846pyZyqIdZPWZo6a//+zpWbDe+ampNPKK7frmTnWTTv9MpZJAGThogoPv7h2q6CyUMlNF8v0D2Wy+dv4YO7m4vAJbGUH7Bx0VUVGPw1h1YxHZEigtK6BoaNCX1zf1nyIj+GBY6f3OrCbD7f1AwSjGfAJUlJoMDzaV9DyokxxYUcJ6+aHIaAJQdw7qtrcEtbqoapiA+iXWFiNo68OnYc1/ylc684lRgGlzsgKsdbvFLYD0DvTRJ2j6nd/tRPsTPcYN5LhsnAXjQN9IwDfTkAAAAABJRU5ErkJggg=="
+              width="26"
+              height="26"
+              alt="Completed"
+              style="flex-shrink: 0;"
+            />
+          {% else %}
+            <img
+              src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAaCAYAAACpSkzOAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAOdEVYdFNvZnR3YXJlAEZpZ21hnrGWYwAAAQpJREFUeAHtVssNgzAMfaAiIfWSETJCR2AERmAERuooHaEjZIRcKlVCFbWjBAFtFD5JDxVPQiRg+8XY2AYCOAlZFUI2bk/rlq/Z/oK9YCNCSBGS4XtIbgIW5lOWQkqsBOsYb5cQsvCqk63VNy93EHwjHNvL3eIBNCXxIRKegC7I5vQpMW+JSQgpbAaRudTstLojAdh+T9+MY1SlImF0gMoAif/DuG6l5MhxYCtMr4lY4zwcbU4/kyoS5rktCDf8HMmKqg3LkN4voI7dj4xNrfSEiGrSNXY/OpNNr4DY2Zt8+h+Vgf1kl7cOJ7ZT68VKbsAIzWx2agrOdd5ap20QLdl8YBz25EHdL4jtG+k6OsxTOMdoAAAAAElFTkSuQmCC"
+              width="26"
+              height="26"
+              alt="Upcoming"
+              style="flex-shrink: 0;"
+            />
+          {% endif %}
+
+          <!-- Day Label -->
+          <span style="
+            font-size: 11px;
+            font-weight: 500;
+            color: rgba(4, 15, 31, 0.7);
+            letter-spacing: 0px;
+          ">{{ day_labels[i] }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+  </div>
+</div>
